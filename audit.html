@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>LPA – Llenar Auditoría</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --navy:#0a1f4e;--blue:#1a56db;--blue-l:#e8f0fd;--blue-xl:#f3f7ff;
+  --g900:#0f172a;--g700:#334155;--g500:#64748b;--g300:#cbd5e1;--g100:#f1f5f9;
+  --white:#fff;--bg:#f0f4f9;--border:#d4dce8;
+  --red:#dc2626;--red-l:#fee2e2;--green:#16a34a;--green-l:#dcfce7;--yellow:#d97706;--yellow-l:#fef3c7;
+  --r:12px;--r-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min-height:100vh;padding-bottom:100px}
+
+/* HEADER */
+.top-bar{background:var(--navy);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(10,31,78,.3)}
+.top-bar h1{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.top-bar p{font-size:11px;color:#93b4e8;margin-top:2px}
+
+/* STATES */
+#state-loading,#state-error,#state-success{padding:60px 20px;text-align:center}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.state-icon{font-size:52px;margin-bottom:12px}
+.state-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.state-sub{font-size:13px;color:var(--g500)}
+
+/* FORM SECTION */
+#state-form{padding:16px}
+.cl-header{background:var(--navy);color:#fff;border-radius:var(--r);padding:16px;margin-bottom:16px}
+.cl-header h2{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.cl-header p{font-size:11px;color:#93b4e8;margin-top:3px}
+.prg-bar{height:6px;background:rgba(255,255,255,.2);border-radius:3px;margin-top:10px;overflow:hidden}
+.prg-fill{height:100%;border-radius:3px;transition:width .3s;background:#60a5fa}
+
+/* META FORM */
+.meta-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.meta-card h3{font-size:12px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.fg{margin-bottom:10px}
+.lbl{display:block;font-size:11px;font-weight:700;color:var(--g700);margin-bottom:4px}
+select,input[type=text],input[type=date]{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--white);color:var(--g900);-webkit-appearance:none;outline:none}
+select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+
+/* QUESTIONS */
+.q-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px;transition:border-color .15s}
+.q-card.answered-ok{border-color:var(--green);background:#f0fdf4}
+.q-card.answered-ng{border-color:var(--red);background:#fff5f5}
+.q-card.answered-na{border-color:var(--g300);background:var(--g100)}
+.q-num-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.q-num{width:24px;height:24px;border-radius:50%;background:var(--blue-l);color:var(--blue);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.q-text{font-weight:700;font-size:14px;line-height:1.4;flex:1}
+.q-meta{font-size:11px;color:var(--g500);margin-bottom:10px}
+.sev-crit{color:var(--red);font-weight:700}
+.sev-mayor{color:var(--yellow);font-weight:700}
+.sev-menor{color:var(--green);font-weight:700}
+
+/* ANSWER BUTTONS */
+.ans-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.ans-btn{padding:12px 6px;border-radius:var(--r-sm);border:2px solid var(--border);background:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:center;transition:all .12s;-webkit-tap-highlight-color:transparent}
+.ans-btn.sel-ok{background:var(--green-l);border-color:var(--green);color:#166534}
+.ans-btn.sel-ng{background:var(--red-l);border-color:var(--red);color:#991b1b}
+.ans-btn.sel-na{background:var(--g100);border-color:var(--g300);color:var(--g700)}
+.obs-area{display:none;margin-top:6px}
+.obs-area.show{display:block}
+textarea{width:100%;padding:10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:13px;min-height:72px;resize:none;outline:none}
+textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+
+/* SUBMIT BAR */
+.submit-bar{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px;z-index:100;box-shadow:0 -4px 20px rgba(10,31,78,.1)}
+.submit-stats{display:flex;gap:12px;margin-bottom:10px;font-size:12px}
+.stat-item{display:flex;align-items:center;gap:4px;font-weight:600}
+.submit-btn{width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .12s;-webkit-tap-highlight-color:transparent}
+.submit-btn:active{background:var(--navy);transform:scale(.98)}
+.submit-btn:disabled{background:var(--g300);cursor:not-allowed;transform:none}
+
+/* SUCCESS */
+.success-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin:20px;text-align:center;box-shadow:0 4px 20px rgba(10,31,78,.08)}
+.comp-circle{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;font-weight:800}
+
+/* TOAST */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;z-index:1000;opacity:0;transition:all .25s;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:#166534}
+.toast.err{background:var(--red)}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>📋 Auditoría LPA</h1>
+  <p id="top-sub">Cargando checklist…</p>
+</div>
+
+<!-- LOADING -->
+<div id="state-loading">
+  <div class="spinner"></div>
+  <div class="state-title">Cargando…</div>
+  <div class="state-sub">Conectando con Firebase</div>
+</div>
+
+<!-- ERROR -->
+<div id="state-error" style="display:none">
+  <div class="state-icon">⚠️</div>
+  <div class="state-title">No se encontró el checklist</div>
+  <div class="state-sub" id="err-msg">Verifica que el código QR sea válido</div>
+</div>
+
+<!-- FORM -->
+<div id="state-form" style="display:none">
+  <div class="cl-header">
+    <h2 id="cl-name">—</h2>
+    <p id="cl-meta">—</p>
+    <div class="prg-bar"><div class="prg-fill" id="prg-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="meta-card">
+    <h3>Datos de la auditoría</h3>
+    <div class="fg"><label class="lbl">Auditor</label><select id="m-aud"><option value="">— Seleccionar auditor —</option></select></div>
+    <div class="fg"><label class="lbl">Zona</label><select id="m-zone"><option value="">— Seleccionar zona —</option></select></div>
+    <div class="fg"><label class="lbl">Parte / Producto en producción</label><input type="text" id="m-part" placeholder="Ej. Bisagra puerta delantera, lote 4521…"/></div>
+    <div class="fg"><label class="lbl">Capa</label>
+      <select id="m-layer">
+        <option value="1">Capa 1 – Líderes</option>
+        <option value="2">Capa 2 – Mandos Medios</option>
+        <option value="3">Capa 3 – Gerencia</option>
+      </select>
+    </div>
+    <div class="fg"><label class="lbl">Turno</label>
+      <select id="m-shift"><option value="Día">Turno de Día</option><option value="Noche">Turno de Noche</option></select>
+    </div>
+    <div class="fg"><label class="lbl">Fecha</label><input type="date" id="m-date"/></div>
+  </div>
+
+  <div id="q-list"></div>
+</div>
+
+<!-- SUCCESS -->
+<div id="state-success" style="display:none;padding:20px">
+  <div class="success-card">
+    <div class="comp-circle" id="succ-circle">🎉</div>
+    <div class="state-title" id="succ-title">¡Auditoría Guardada!</div>
+    <div class="state-sub" id="succ-sub">Los datos se guardaron en la nube</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0;text-align:center">
+      <div style="background:var(--blue-l);border-radius:var(--r-sm);padding:12px">
+        <div style="font-size:22px;font-weight:800;color:var(--blue)" id="succ-comp">—</div>
+        <div style="font-size:10px;color:var(--g500);font-weight:700;text-transform:uppercase">Cumpl.</div>
+      </div>
+      <div style="background:var(--red-l);border-radius:var(--r-sm);padding:12px">
+        <div style="font-size:22px;font-weight:800;color:var(--red)" id="succ-ng">—</div>
+        <div style="font-size:10px;color:var(--g500);font-weight:700;text-transform:uppercase">NG</div>
+      </div>
+      <div style="background:var(--green-l);border-radius:var(--r-sm);padding:12px">
+        <div style="font-size:22px;font-weight:800;color:var(--green)" id="succ-ok">—</div>
+        <div style="font-size:10px;color:var(--g500);font-weight:700;text-transform:uppercase">OK</div>
+      </div>
+    </div>
+    <button style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-top:8px" onclick="location.reload()">
+      ＋ Nueva Auditoría
+    </button>
+  </div>
+</div>
+
+<!-- SUBMIT BAR -->
+<div class="submit-bar" id="submit-bar" style="display:none">
+  <div class="submit-stats">
+    <span class="stat-item" style="color:var(--green)">✅ <span id="cnt-ok">0</span> OK</span>
+    <span class="stat-item" style="color:var(--red)">❌ <span id="cnt-ng">0</span> NG</span>
+    <span class="stat-item" style="color:var(--g500)">— <span id="cnt-na">0</span> N/A</span>
+    <span class="stat-item" style="margin-left:auto;color:var(--g500)"><span id="cnt-pend">0</span> pend.</span>
+  </div>
+  <button class="submit-btn" id="submit-btn" onclick="submitAudit()">Guardar Auditoría en la Nube ☁</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCRqBYCZ_HCGHCxISKzvyuzsSDzRkwJXjU",
+  authDomain: "hpm-lpa-sistema.firebaseapp.com",
+  projectId: "hpm-lpa-sistema",
+  storageBucket: "hpm-lpa-sistema.firebasestorage.app",
+  messagingSenderId: "216917254304",
+  appId: "1:216917254304:web:1f56c8bfe942702f5ea9c5"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+function esc(s){return String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function v(id){const el=document.getElementById(id);return el?el.value.trim():''}
+function today(){return new Date().toISOString().slice(0,10)}
+function toast(msg,type=''){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');
+  setTimeout(()=>t.className='toast',2800);
+}
+function show(id){['state-loading','state-error','state-form','state-success'].forEach(s=>{document.getElementById(s).style.display=s===id?'block':'none'})}
+
+// Get checklist ID from URL
+const params=new URLSearchParams(location.search);
+const clId=params.get('cl');
+
+function mergeByName(defaults,fromFb,key){
+  const extra=fromFb.filter(f=>!defaults.some(d=>d[key].trim().toLowerCase()===f[key].trim().toLowerCase()));
+  return [...defaults,...extra];
+}
+
+// Auditores y zonas por default (se usan si Firebase no responde o no tiene datos aún)
+const DEFAULT_AUDITORS=[
+  {emp:'0001',name:'Alberto García'},
+  {emp:'0002',name:'Jaime Rodríguez'},
+  {emp:'0003',name:'Alberto Rodríguez'},
+  {emp:'0004',name:'Adrián Sánchez'},
+  {emp:'0005',name:'Laura Casas'},
+  {emp:'0006',name:'Javier Rivera'},
+  {emp:'0007',name:'Jesús González'},
+  {emp:'0009',name:'Jonathan Alvarado'},
+  {emp:'0010',name:'Paola Cerecero'},
+  {emp:'0011',name:'Saúl Guajardo'},
+  {emp:'0012',name:'Julio Izquierdo'},
+  {emp:'0013',name:'Ignacio Vázquez'},
+  {emp:'0014',name:'Antonio Martínez'},
+  {emp:'0015',name:'Brandon Gutiérrez'},
+  {emp:'0016',name:'Josmar López'}
+].map((a,i)=>({id:'def_aud_'+i,...a}));
+
+const DEFAULT_ZONES=[
+  'Inyección','Welding','MOC','Ensamble','Caucho','Blow',
+  'Cuarentena Planta 1','Cuarentena Planta 2','Almacén Planta 2','Embarques','GP12'
+].map((name,i)=>({id:'def_zone_'+i,name}));
+
+let _cl=null,_zones=[...DEFAULT_ZONES],_auditors=[...DEFAULT_AUDITORS],_answers={};
+
+// Preguntas base del checklist genérico LPA, agrupadas por sección
+const BASE_QUESTIONS=[
+  {text:'¿La Operación cuenta con su señalamiento de EPP?',cat:'Seguridad',ref:'Seguridad/EPP',sev:'Mayor',section:'Seguridad'},
+  {text:'¿El Operador cumple con su EPP?',cat:'Seguridad',ref:'Seguridad/EPP',sev:'Crítica',section:'Seguridad'},
+  {text:'¿El Área de Trabajo está libre de contaminantes como aceite en el suelo, resina suelta, coladas o rebabas que pudieran afectar la Seguridad, el Ambiente o la Calidad?',cat:'Seguridad',ref:'5S / Seguridad / Ambiente',sev:'Mayor',section:'Seguridad'},
+  {text:'¿Los Materiales no Conformes están correctamente segregados e identificados?',cat:'Producto no conforme',ref:'IATF 16949',sev:'Mayor',section:'Seguridad'},
+  {text:'¿El Equipo cuenta con Guardas de Seguridad? (Puede no aplicar, justifica)',cat:'Seguridad',ref:'Seguridad de equipo',sev:'Crítica',section:'Seguridad'},
+  {text:'¿La Operación cuenta con Work Standard?',cat:'Documentación',ref:'IATF 16949 / VDA 6.3',sev:'Mayor',section:'Operación'},
+  {text:'¿La Operación cuenta con PKYK? Si es así, ¿el Checklist de PKYK está correctamente llenado? (Prueba retando el PKYK con el Red Rabbit correspondiente)',cat:'Prevención de error',ref:'CQI-23 / IATF',sev:'Crítica',section:'Operación'},
+  {text:'¿La Operación cuenta con Worksheet? (Verificar que el Worksheet haga relación con el Work Standard)',cat:'Documentación',ref:'IATF 16949 / VDA 6.3',sev:'Mayor',section:'Operación'},
+  {text:'¿La Operación cuenta con Matriz de Habilidades? (Si es así, verifica que el Operador sea el Titular de la Operación)',cat:'Competencia',ref:'IATF 16949 / VDA 6.3',sev:'Mayor',section:'Operación'},
+  {text:'¿La Operación cuenta con PQC? (Si es así, verifica que los datos registrados estén dentro de especificación)',cat:'Control de proceso',ref:'CQI-23 / IATF',sev:'Crítica',section:'Operación'},
+  {text:'¿La Operación cuenta con Alertas de Calidad vigentes? (Verifica que la Alerta sea de fecha reciente, no mayor a 1 mes)',cat:'Calidad',ref:'IATF 16949',sev:'Mayor',section:'Operación'}
+];
+
+async function init(){
+  // Si no hay checklist en la URL, usamos el Checklist Base — no requiere Firebase para mostrarse
+  if(!clId){
+    _cl={id:'base',name:'Checklist Base LPA – Seguridad y Operación',zoneId:'',questions:BASE_QUESTIONS.map((q,i)=>({id:'base_'+i,...q}))};
+    setupForm();
+    // Intentamos cargar zonas/auditores en segundo plano y los fusionamos con los defaults; si falla, los defaults se quedan
+    try{
+      const [zSnap,aSnap]=await Promise.all([getDocs(collection(db,'zones')),getDocs(collection(db,'auditors'))]);
+      const fbZones=zSnap.docs.map(d=>({id:d.id,...d.data()}));
+      const fbAuditors=aSnap.docs.map(d=>({id:d.id,...d.data()}));
+      _zones=mergeByName(DEFAULT_ZONES,fbZones,'name');
+      _auditors=mergeByName(DEFAULT_AUDITORS,fbAuditors,'name');
+      refreshSelects();
+    }catch(e){
+      // Sin conexión: nos quedamos con los defaults, ya visibles desde setupForm()
+    }
+    return;
+  }
+  try{
+    // Load all data
+    const [clSnap,zSnap,aSnap]=await Promise.all([
+      getDocs(collection(db,'checklists')),
+      getDocs(collection(db,'zones')),
+      getDocs(collection(db,'auditors'))
+    ]);
+    const checklists=clSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const fbZones=zSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const fbAuditors=aSnap.docs.map(d=>({id:d.id,...d.data()}));
+    _zones=mergeByName(DEFAULT_ZONES,fbZones,'name');
+    _auditors=mergeByName(DEFAULT_AUDITORS,fbAuditors,'name');
+    _cl=checklists.find(c=>c.id===clId);
+    if(!_cl){show('state-error');return}
+    setupForm();
+  }catch(e){
+    show('state-error');document.getElementById('err-msg').textContent='Error de conexión: '+e.message;
+  }
+}
+
+function refreshSelects(){
+  const audOpts=_auditors.map(a=>`<option value="${a.id}">${a.emp?esc(a.emp)+' - ':''}${esc(a.name)}</option>`).join('');
+  document.getElementById('m-aud').innerHTML='<option value="">— Seleccionar auditor —</option>'+audOpts;
+  const zoneOpts=_zones.map(z=>`<option value="${z.id}">${esc(z.name)}</option>`).join('');
+  document.getElementById('m-zone').innerHTML='<option value="">— Seleccionar zona —</option>'+zoneOpts;
+}
+
+function setupForm(){
+  const zone=_zones.find(z=>z.id===_cl.zoneId);
+  document.getElementById('top-sub').textContent=zone?zone.name:'Sistema LPA – HPM';
+  document.getElementById('cl-name').textContent=_cl.name;
+  document.getElementById('cl-meta').textContent=`${((_cl.questions||[]).length)} preguntas · ${zone?zone.name:'Todas las zonas'}`;
+  document.getElementById('m-date').value=today();
+
+  // Populate selects
+  refreshSelects();
+  if(_cl.zoneId)document.getElementById('m-zone').value=_cl.zoneId;
+
+  // Render questions (agrupadas por sección si las preguntas la tienen)
+  const qs=_cl.questions||[];
+  let lastSection=null;
+  document.getElementById('q-list').innerHTML=qs.map((q,i)=>{
+    let sectionHdr='';
+    if(q.section&&q.section!==lastSection){
+      lastSection=q.section;
+      sectionHdr=`<div style="font-size:12px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin:${i===0?'0':'18px'} 0 8px;padding-bottom:4px;border-bottom:2px solid var(--blue-l)">${esc(q.section)}</div>`;
+    }
+    return `${sectionHdr}
+    <div class="q-card" id="qc_${i}">
+      <div class="q-num-row">
+        <div class="q-num">${i+1}</div>
+        <div class="q-text">${esc(q.text)}</div>
+      </div>
+      <div class="q-meta">
+        ${esc(q.cat)} · 
+        <span class="${q.sev==='Crítica'?'sev-crit':q.sev==='Mayor'?'sev-mayor':'sev-menor'}">${esc(q.sev)}</span>
+        · ${esc(q.ref)}
+      </div>
+      <div class="ans-row">
+        <button class="ans-btn" id="ab_${i}_ok" onclick="setAns(${i},'OK')">✅ OK</button>
+        <button class="ans-btn" id="ab_${i}_ng" onclick="setAns(${i},'NG')">❌ NG</button>
+        <button class="ans-btn" id="ab_${i}_na" onclick="setAns(${i},'NA')">— N/A</button>
+      </div>
+      <div class="obs-area" id="obs_${i}">
+        <textarea id="ot_${i}" placeholder="Observación / evidencia (obligatorio para NG)…" rows="2" oninput="updateAns(${i})"></textarea>
+        <input type="text" id="oa_${i}" placeholder="Acción inmediata / responsable" style="margin-top:6px" oninput="updateAns(${i})"/>
+      </div>
+    </div>`;
+  }).join('');
+
+  show('state-form');
+  document.getElementById('submit-bar').style.display='block';
+  updateStats();
+}
+
+window.setAns=function(i,res){
+  _answers[i]={result:res,observation:'',action:''};
+  ['ok','ng','na'].forEach(r=>{
+    const b=document.getElementById(`ab_${i}_${r}`);
+    b.className='ans-btn'+(res===r.toUpperCase()?` sel-${r}`:'');
+  });
+  const card=document.getElementById(`qc_${i}`);
+  card.className='q-card '+(res==='OK'?'answered-ok':res==='NG'?'answered-ng':'answered-na');
+  const obs=document.getElementById(`obs_${i}`);
+  obs.className='obs-area'+(res==='NG'?' show':'');
+  updateStats();
+};
+window.updateAns=function(i){
+  if(_answers[i]){
+    _answers[i].observation=v('ot_'+i);
+    _answers[i].action=v('oa_'+i);
+  }
+};
+
+function updateStats(){
+  const qs=_cl.questions||[];const total=qs.length;
+  const ok=Object.values(_answers).filter(a=>a.result==='OK').length;
+  const ng=Object.values(_answers).filter(a=>a.result==='NG').length;
+  const na=Object.values(_answers).filter(a=>a.result==='NA').length;
+  const pend=total-(ok+ng+na);
+  document.getElementById('cnt-ok').textContent=ok;
+  document.getElementById('cnt-ng').textContent=ng;
+  document.getElementById('cnt-na').textContent=na;
+  document.getElementById('cnt-pend').textContent=pend;
+  const pct=total?Math.round((ok+ng+na)/total*100):0;
+  const fill=document.getElementById('prg-fill');
+  fill.style.width=pct+'%';
+  fill.style.background=pct<50?'#f87171':pct<100?'#fbbf24':'#4ade80';
+  document.getElementById('submit-btn').disabled=pend>0;
+  if(pend>0)document.getElementById('submit-btn').textContent=`Responde ${pend} pregunta(s) pendiente(s)`;
+  else document.getElementById('submit-btn').textContent='Guardar Auditoría en la Nube ☁';
+}
+
+window.submitAudit=async function(){
+  const audId=v('m-aud'),zoneId=v('m-zone'),date=v('m-date');
+  if(!audId){toast('Selecciona un auditor','err');return}
+  if(!zoneId){toast('Selecciona una zona','err');return}
+  if(!date){toast('Selecciona una fecha','err');return}
+  const qs=_cl.questions||[];
+  const answers=qs.map((q,i)=>({
+    ...q,
+    result:_answers[i]?_answers[i].result:'NA',
+    observation:_answers[i]?_answers[i].observation:'',
+    action:_answers[i]?_answers[i].action:'',
+    closed:(!_answers[i]||_answers[i].result!=='NG')
+  }));
+  const applicable=answers.filter(a=>a.result!=='NA').length;
+  const ok=answers.filter(a=>a.result==='OK').length;
+  const ng=answers.filter(a=>a.result==='NG').length;
+  const comp=applicable?Math.round(ok/applicable*100):100;
+  document.getElementById('submit-btn').disabled=true;
+  document.getElementById('submit-btn').textContent='Guardando…';
+  try{
+    await addDoc(collection(db,'audits'),{
+      checklistId:clId,zoneId,auditorId:audId,
+      date,layer:v('m-layer'),shift:v('m-shift'),part:v('m-part'),
+      answers,compliance:comp,ng,closedNG:0,
+      source:'mobile',createdAt:new Date().toISOString()
+    });
+    // Show success
+    document.getElementById('submit-bar').style.display='none';
+    const circle=document.getElementById('succ-circle');
+    const compColor=comp>=90?'var(--green-l)':comp>=70?'var(--yellow-l)':'var(--red-l)';
+    const compText=comp>=90?'var(--green)':comp>=70?'var(--yellow)':'var(--red)';
+    circle.style.background=compColor;circle.style.color=compText;
+    circle.textContent=comp+'%';
+    document.getElementById('succ-title').textContent=ng===0?'¡Auditoría sin hallazgos!':'Auditoría con hallazgos';
+    document.getElementById('succ-sub').textContent='Datos guardados en la nube · '+date;
+    document.getElementById('succ-comp').textContent=comp+'%';
+    document.getElementById('succ-ng').textContent=ng;
+    document.getElementById('succ-ok').textContent=ok;
+    show('state-success');
+  }catch(e){
+    toast('Error al guardar: '+e.message,'err');
+    document.getElementById('submit-btn').disabled=false;
+    document.getElementById('submit-btn').textContent='Guardar Auditoría en la Nube ☁';
+  }
+};
+
+init();
+</script>
+</body>
+</html>
